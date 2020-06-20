@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SpotYou.Services;
+using SpotYou.Services.Youtube;
 
 namespace SpotYou
 {
@@ -17,6 +18,7 @@ namespace SpotYou
                 .ConfigureServices(services =>
                 {
                     services.AddHostedService<RunnerService>();
+                    services.AddSingleton<IYoutubeService, YoutubeService>();
                 });
         }
     }
