@@ -76,16 +76,14 @@ namespace SpotYou.Services
 
             await foreach (var title in _youtubeService.QueryLikedMusicVideos(cancellationToken))
             {
-                var finalTitle = Regex.Replace(title, @"[|()\[\]{}][\s]*(Official)*[\s]*(Music)*[\s]*(Video)*[\s]*[|()\[\]{}]", string.Empty);
-                finalTitle = finalTitle.Replace(" - ", " ");
-                finalTitle = finalTitle.Trim();
+                var finalTitle = FilterTitle(title);
 
                 _logger.LogInformation("Searching for {title}!", finalTitle);
                 var tracks = await _spotifyService.SearchTracks(finalTitle, cancellationToken);
 
                 if (tracks.Count == 0)
                 {
-                    _logger.LogInformation("{title} not found!", finalTitle);
+                    _logger.LogWarning("{title} not found!", finalTitle);
                     continue;
                 }
 
@@ -95,6 +93,26 @@ namespace SpotYou.Services
 
                 await _spotifyService.AddToPlaylist(playlistId, track.Id, cancellationToken);
             }
+        }
+
+        private static string FilterTitle(string original)
+        {
+            var ignoredWords = new[] { "official", "music", "video", "remix", "dubstep", "ft", "feat", "lyrics", "prod", "version", "one take", "production", "audio", "lyric", "fanmade" };
+
+            var title = original.ToLowerInvariant();
+
+            title = Regex.Replace(title, @"[(\[|]prod.+[)\]|]", string.Empty);
+            title = Regex.Replace(title, @"prod.+\s", string.Empty);
+            title = Regex.Replace(title, @"[()|\[\]\-,*]", string.Empty);
+
+            foreach (var ignoredWord in ignoredWords)
+                title = title.Replace(ignoredWord, string.Empty);
+
+            title = Regex.Replace(title, @"\s[\.x&]", " ");
+            title = title.Replace("ncs release", string.Empty);
+            title = Regex.Replace(title, @"(\s)\s+", "$1");
+
+            return title.Trim();
         }
 
         public void Dispose()
