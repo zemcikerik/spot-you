@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -6,6 +9,7 @@ using SpotifyAPI.Web;
 using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
+using SpotYou.Models;
 
 namespace SpotYou.Services.Spotify
 {
@@ -72,17 +76,62 @@ namespace SpotYou.Services.Spotify
             _spotifyAPI.AccessToken = _token.AccessToken;
         }
 
-        public async Task CreatePlaylist(string name, CancellationToken cancellationToken)
+        public async Task<string> CreatePlaylist(string name, CancellationToken cancellationToken)
+        {
+            await AssertInitializedAndRefresh();
+
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
+            var playlist = await _spotifyAPI!.CreatePlaylistAsync(_profile!.Id, name, false);
+            return playlist.Id;
+        }
+
+        public async Task AddToPlaylist(string playlistId, string trackId, CancellationToken cancellationToken)
+        {
+            await AssertInitializedAndRefresh();
+
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
+            var result = await _spotifyAPI!.AddPlaylistTrackAsync(playlistId, $"spotify:track:{trackId}");
+
+            if (result.HasError())
+                throw new Exception(result.Error.Message);
+        }
+
+        public async Task<IList<ITrack>> SearchTracks(string name, CancellationToken cancellationToken)
+        {
+            await AssertInitializedAndRefresh();
+
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
+            var searchResult = await _spotifyAPI!.SearchItemsEscapedAsync(name, SearchType.Track, 5);
+
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException();
+
+            var received = searchResult.Tracks.Items;
+
+            return received.Select(track =>
+            {
+                var artists = track.Artists
+                    .Select(artist => artist.Name)
+                    .ToList();
+
+                return new Track(track.Id, track.Name, artists);
+            }).Cast<ITrack>().ToList();
+        }
+
+        private Task AssertInitializedAndRefresh()
         {
             Debug.Assert(_spotifyAPI != null, "Spotify Service is not initialized!");
 
             if (_token!.IsExpired())
-                await RefreshToken();
+                return RefreshToken();
 
-            if (cancellationToken.IsCancellationRequested)
-                return;
-
-            await _spotifyAPI.CreatePlaylistAsync(_profile!.Id, name, false);
+            return Task.CompletedTask;
         }
 
         public void Dispose()

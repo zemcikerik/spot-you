@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using SpotYou.Services.Spotify;
 using SpotYou.Services.Youtube;
 
@@ -53,6 +55,10 @@ namespace SpotYou.Services
             catch (Exception e)
             {
                 _logger.LogCritical(e, "Runner service has thrown a critical exception!");
+                throw;
+            }
+            finally
+            {
                 _applicationLifetime.StopApplication();
             }
         }
@@ -62,7 +68,28 @@ namespace SpotYou.Services
             await _youtubeService.Initialize(cancellationToken);
             await _spotifyService.Initialize(cancellationToken);
 
-            await _spotifyService.CreatePlaylist(Constants.ApplicationName, cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            var playlistId = await _spotifyService.CreatePlaylist(Constants.ApplicationName, cancellationToken);
+
+            await foreach (var title in _youtubeService.QueryLikedMusicVideos(cancellationToken))
+            {
+                _logger.LogInformation("Searching for {title}!", title);
+                var tracks = await _spotifyService.SearchTracks(title, cancellationToken);
+
+                if (tracks.Count == 0)
+                {
+                    _logger.LogInformation("{title} not found!", title);
+                    continue;
+                }
+
+                // grab the first track for now
+                var track = tracks.First();
+                _logger.LogInformation("Found {track.Name} by {track.Artists}", track.Name, JsonConvert.SerializeObject(track.Artists));
+
+                await _spotifyService.AddToPlaylist(playlistId, track.Id, cancellationToken);
+            }
         }
 
         public void Dispose()
