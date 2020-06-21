@@ -54,7 +54,8 @@ namespace SpotYou.Services.Spotify
             _spotifyAPI = new SpotifyWebAPI
             {
                 TokenType = _token.TokenType,
-                AccessToken = _token.AccessToken
+                AccessToken = _token.AccessToken,
+                UseAutoRetry = true
             };
 
             _profile = await _spotifyAPI.GetPrivateProfileAsync();
@@ -112,7 +113,13 @@ namespace SpotYou.Services.Spotify
             if (cancellationToken.IsCancellationRequested)
                 throw new OperationCanceledException();
 
-            var received = searchResult.Tracks.Items;
+            if (searchResult.HasError())
+                throw new Exception(searchResult.Error.Message);
+
+            var received = searchResult.Tracks?.Items;
+
+            if (received is null)
+                return new List<ITrack>();
 
             return received.Select(track =>
             {

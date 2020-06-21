@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -75,12 +76,16 @@ namespace SpotYou.Services
 
             await foreach (var title in _youtubeService.QueryLikedMusicVideos(cancellationToken))
             {
-                _logger.LogInformation("Searching for {title}!", title);
-                var tracks = await _spotifyService.SearchTracks(title, cancellationToken);
+                var finalTitle = Regex.Replace(title, @"[|()\[\]{}][\s]*(Official)*[\s]*(Music)*[\s]*(Video)*[\s]*[|()\[\]{}]", string.Empty);
+                finalTitle = finalTitle.Replace(" - ", " ");
+                finalTitle = finalTitle.Trim();
+
+                _logger.LogInformation("Searching for {title}!", finalTitle);
+                var tracks = await _spotifyService.SearchTracks(finalTitle, cancellationToken);
 
                 if (tracks.Count == 0)
                 {
-                    _logger.LogInformation("{title} not found!", title);
+                    _logger.LogInformation("{title} not found!", finalTitle);
                     continue;
                 }
 
