@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using SpotYou.Services;
 using SpotYou.Services.Youtube;
 
@@ -18,7 +19,16 @@ namespace SpotYou
                 .ConfigureServices(services =>
                 {
                     services.AddHostedService<RunnerService>();
-                    services.AddSingleton<IYoutubeService, YoutubeService>();
+
+                    services.AddSingleton<IYoutubeService, YoutubeService>()
+                        .AddTransient<IYoutubeKeyProvider, YoutubeKeyProvider>();
+                })
+                .ConfigureLogging((contextBuilder, loggingBuilder) =>
+                {
+                    if (contextBuilder.HostingEnvironment.IsDevelopment())
+                    {
+                        loggingBuilder.SetMinimumLevel(LogLevel.Debug);
+                    }
                 });
         }
     }

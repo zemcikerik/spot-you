@@ -3,6 +3,7 @@
     internal static class Constants
     {
         internal const string ApplicationName = "SpotYou";
-        internal const string YoutubeAPIKeyPath = "";
+        internal const string YoutubeOAuthClientIdPath = "YoutubeOAuthClientId";
+        internal const string YoutubeOAuthClientSecretPath = "YoutubeOAuthClientSecret";
     }
 }

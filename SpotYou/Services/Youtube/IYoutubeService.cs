@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SpotYou.Services.Youtube
@@ -6,5 +7,6 @@ namespace SpotYou.Services.Youtube
     public interface IYoutubeService
     {
         Task Initialize(CancellationToken cancellationToken);
+        IAsyncEnumerable<string> QueryLikedMusicVideos(CancellationToken cancellationToken);
     }
 }

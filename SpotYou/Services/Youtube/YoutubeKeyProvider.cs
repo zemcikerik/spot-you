@@ -14,10 +14,16 @@ namespace SpotYou.Services.Youtube
             _configuration = configuration;
         }
 
-        public string GetYoutubeAPIKey()
+        public string GetYoutubeOAuthClientId()
         {
-            _logger.LogDebug("Youtube API key requested!");
-            return _configuration.GetValue<string>(Constants.YoutubeAPIKeyPath);
+            _logger.LogDebug("Youtube OAuth Client Id requested!");
+            return _configuration.GetValue<string>(Constants.YoutubeOAuthClientIdPath);
+        }
+
+        public string GetYoutubeOAuthClientSecret()
+        {
+            _logger.LogDebug("Youtube OAuth Client Secret requested!");
+            return _configuration.GetValue<string>(Constants.YoutubeOAuthClientSecretPath);
         }
     }
 }

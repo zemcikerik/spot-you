@@ -2,6 +2,7 @@
 {
     public interface IYoutubeKeyProvider
     {
-        string GetYoutubeAPIKey();
+        string GetYoutubeOAuthClientId();
+        string GetYoutubeOAuthClientSecret();
     }
 }
