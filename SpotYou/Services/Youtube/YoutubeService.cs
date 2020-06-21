@@ -63,12 +63,8 @@ namespace SpotYou.Services.Youtube
             request.MyRating = VideosResource.ListRequest.MyRatingEnum.Like;
             request.MaxResults = MaxResultsPerPage;
 
-            var nextPageToken = request.PageToken;
-
             do
             {
-                request.PageToken = nextPageToken;
-
                 var response = await request.ExecuteAsync(cancellationToken);
                 var videos = response.Items;
 
@@ -83,8 +79,13 @@ namespace SpotYou.Services.Youtube
                         yield return snippet.Title;
                 }
 
-                nextPageToken = response.NextPageToken;
-            } while (nextPageToken != null);
+                request.PageToken = response.NextPageToken;
+            } while (request.PageToken != null);
+        }
+
+        public void Dispose()
+        {
+            _ytService?.Dispose();
         }
     }
 }

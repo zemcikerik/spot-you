@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SpotYou.Services;
+using SpotYou.Services.Spotify;
 using SpotYou.Services.Youtube;
 
 namespace SpotYou
@@ -19,9 +20,12 @@ namespace SpotYou
                 .ConfigureServices(services =>
                 {
                     services.AddHostedService<RunnerService>();
-
+                    
                     services.AddSingleton<IYoutubeService, YoutubeService>()
                         .AddTransient<IYoutubeKeyProvider, YoutubeKeyProvider>();
+
+                    services.AddSingleton<ISpotifyService, SpotifyService>()
+                        .AddTransient<ISpotifyKeyProvider, SpotifyKeyProvider>();
                 })
                 .ConfigureLogging((contextBuilder, loggingBuilder) =>
                 {

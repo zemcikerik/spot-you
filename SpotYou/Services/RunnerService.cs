@@ -3,26 +3,30 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SpotYou.Services.Spotify;
 using SpotYou.Services.Youtube;
 
 namespace SpotYou.Services
 {
-    public sealed class RunnerService : IHostedService
+    public sealed class RunnerService : IHostedService, IDisposable
     {
         private readonly ILogger<RunnerService> _logger;
         private readonly IHostApplicationLifetime _applicationLifetime;
         private readonly IYoutubeService _youtubeService;
+        private readonly ISpotifyService _spotifyService;
 
         private readonly TaskCompletionSource<bool> _taskCompletionSource;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
         public RunnerService(ILogger<RunnerService> logger, 
             IHostApplicationLifetime applicationLifetime,
-            IYoutubeService youtubeService)
+            IYoutubeService youtubeService,
+            ISpotifyService spotifyService)
         {
             _logger = logger;
             _applicationLifetime = applicationLifetime;
             _youtubeService = youtubeService;
+            _spotifyService = spotifyService;
 
             _taskCompletionSource = new TaskCompletionSource<bool>();
             _cancellationTokenSource = new CancellationTokenSource();
@@ -56,11 +60,15 @@ namespace SpotYou.Services
         private async Task DoWork(CancellationToken cancellationToken)
         {
             await _youtubeService.Initialize(cancellationToken);
+            await _spotifyService.Initialize(cancellationToken);
 
-            await foreach (var title in _youtubeService.QueryLikedMusicVideos(cancellationToken))
-            {
-                _logger.LogInformation(title);
-            }
+            await _spotifyService.CreatePlaylist(Constants.ApplicationName, cancellationToken);
+        }
+
+        public void Dispose()
+        {
+            _youtubeService.Dispose();
+            _spotifyService.Dispose();
         }
     }
 }
